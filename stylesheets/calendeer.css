@@ -1,0 +1,101 @@
+.calendeers {
+  font: 12px/16px "Helvetica Nueue", Helvetica, Arial, sans-serif;
+  color: #395069;
+  text-align: center;
+  overflow: hidden;
+  width: 410px;
+}
+
+.calendeer {
+  margin: 5px;
+  width: 195px;
+  float: left;
+}
+
+.calendeer-previous,
+.calendeer-next {
+  position: absolute;
+  top: 0;
+  width: 24px;
+  height: 24px;
+  border: 0 solid #b7cfdf;
+}
+
+.calendeer-previous {
+  left: 0;
+  border-right-width: 1px;
+}
+
+.calendeer-next {
+  right: 0;
+  border-left-width: 1px;
+}
+
+.calendeer-header {
+  position: relative;
+  border: 1px solid #b7cfdf;
+  line-height: 2em;
+  border-radius: 5px;
+  background-color: #f2f7fa;
+  color: #6e788b;
+}
+
+.calendeer-grid {
+  margin: 3px;
+}
+
+.calendeer-grid-header,
+.calendeer-week-row {
+  overflow: hidden;
+}
+
+.calendeer-day-name,
+.calendeer-day {
+  width: 23px;
+  margin: 2px;
+  float: left;
+  border-radius: 2px;
+}
+
+.calendeer-day {
+  background-color: #f4f6fa;
+}
+
+.calendeer-day.empty {
+  background-color: transparent;
+}
+
+.calendeer-day.past {
+  color: #bbb;
+  background-color: transparent;
+}
+
+.calendeer-day.today {
+  font-weight: bold;
+}
+
+.calendeer-day.start-date {
+  background-color: #e39937;
+  color: white;
+}
+
+.calendeer-day.end-date {
+  background-color: #3bd521;
+  color: white;
+}
+
+.calendeer-day.start-end-date {
+  background-color: #f00;
+  color: white;
+}
+
+.calendeer-day.between-date {
+  background-color: #80b5ea;
+  color: white;
+}
+
+.calendeers.end-focus .before-date,
+.calendeers.start-focus .after-date {
+  background-color: #dedede;
+  color: gray;
+}
