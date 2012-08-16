@@ -15,6 +15,11 @@ $(function(){
   };
   var rightNow = new Date();
   var Calendar = function( month, year ) {
+    if ( Utils.isDate(month) ) {
+      year = month.getFullYear();
+      month = month.getMonth();
+    }
+    this.dateObject = null;
     this.year = year || rightNow.getFullYear();
     this.elements = {};
     this._setup( month );
@@ -30,8 +35,6 @@ $(function(){
       if ( month == undefined ) {
         month = rightNow.getMonth();
       }
-
-
       var self = this,
           index,
           months = $.map( this._names.en, function( el ) {
@@ -50,6 +53,7 @@ $(function(){
         year = self.month === 11  ? self.year + 1 : self.year;
         return ( new Date( year, month, 0 ) ).getDate();
       })();
+      this.dateObject = new Date( this.year, this.month, 1 );
       this.render();
     },
     render: function() {
@@ -70,7 +74,7 @@ $(function(){
           "class": p,
           "data-month": this.name,
           "data": { "calendeer": this }
-        } );
+        } ).hide();
       e.header =
         $( "<div></div>", {"class": pd + c.header, "text": this.name + " " + this.year} );
       e.previousButton =
@@ -156,8 +160,15 @@ $(function(){
     },
     hide: function() {
       this.elements.calendeer.hide();
+    },
+    drawState: function() {
+      var day,
+          days = this.daysInMonth;
+      while( days-- ) {
+        day = this.days[ days ];
+        day.drawState.apply( day, arguments );
+      }
     }
-
   });
 
   var CalendarError = function( message ) {

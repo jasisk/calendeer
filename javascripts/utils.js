@@ -5,7 +5,37 @@
       START:   1 << 1,
       BETWEEN: 1 << 2,
       END:     1 << 3,
-      AFTER:   1 << 4,
+      AFTER:   1 << 4
+    },
+    rightNow: new Date(),
+    addMonth: function( date, months ) {
+      var year;
+      if ( months == undefined ) {
+        months = 1;
+      }
+      months = parseInt( months, 10 );
+      if ( isNaN(months) ) {
+        throw new UtilsError( "addMonth requires an integer" );
+      }
+      if ( ! this.isDate(date) ) {
+        date = this.rightNow;
+      }
+      year = date.getFullYear();
+      months += date.getMonth() + 1;
+      year += months / 12 | 0;
+      months = months % 12 - 1;
+      return new Date( year, months, 1 );
+    },
+    monthDiff: function( start, end ) {
+      if ( ! this.isDate(start) && ! this.isDate(end) ) {
+        throw new UtilsError( "monthDiff requires date objects" );
+      }
+      var yearDiff;
+      start = this.toArray( start );
+      end = this.toArray( end );
+      yearDiff = end[ 0 ] - start[ 0 ];
+      monthDiff = end[ 1 ] - start[ 1 ];
+      return yearDiff*12 + monthDiff;
     },
     isDate: function( date ) {
       return typeof date === "object" && date instanceof Date;
@@ -68,6 +98,14 @@
       return dateArray;
     }
   };
+
+  var UtilsError = function( message ) {
+    this.name = "UtilsError";
+    this.message = message || "Unspecified exception";
+  };
+
+  UtilsError.prototype = new Error();
+  UtilsError.prototype.constructor = UtilsError;
 
   window.App = window.App || {};
   window.App.Utils = Utils;
