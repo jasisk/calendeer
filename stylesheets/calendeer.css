@@ -91,7 +91,7 @@
 .calendeer-day.start-end-date,
 .calendeers.start-focus .calendeer-day.end-date.hovered,
 .calendeers.end-focus .calendeer-day.start-date.hovered {
-  background-color: #f00;
+  background: url(../images/start-end-date.gif) 50% 50% no-repeat;
   color: white;
 }
 

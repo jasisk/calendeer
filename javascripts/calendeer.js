@@ -106,10 +106,14 @@ $(function(){
         focused = this.focused === "start" ? "end" : "start";
       }
       if ( focused === "end" ) {
+        $( this.options.endInput ).addClass( "calendeer-focused-input" );
+        $( this.options.startInput ).removeClass( "calendeer-focused-input" );
         this.focused = "end";
         this.el.addClass( "end-focus" );
         this.el.removeClass( "start-focus" );
       } else {
+        $( this.options.startInput ).addClass( "calendeer-focused-input" );
+        $( this.options.endInput ).removeClass( "calendeer-focused-input" );
         this.focused = "start";
         this.el.addClass( "start-focus" );
         this.el.removeClass( "end-focus" );
