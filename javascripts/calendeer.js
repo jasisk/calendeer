@@ -1,18 +1,15 @@
 $(function(){
 
-  var confs = {
-    numberOfCalendars: 4,
-    maxCalendars: 0
-  };
-
   var rightNow = new Date();
 
-  var Calendeer = function( start, end ) {
+  var Calendeer = function( options ) {
+    var opts = $.extend( {},Calendeer.defaults, options );
     this.dates = {
       today: rightNow,
       start: null,
       end: null
     };
+    this.options = opts;
     this.Calendars = {};
     this.visibleIndexes = [];
     this.setup();
@@ -20,46 +17,73 @@ $(function(){
 
   $.extend( Calendeer.prototype, {
     setup: function() {
-      var numCalendars = confs.numberOfCalendars,
+      var numCalendars = this.options.numberOfCalendars,
           date = rightNow;
+      this.el = $( "<div></div>", {"class": "calendeers"} );
       this.show( date );
+      if ( this.options.target ) {
+        this.attach( this.options.target );
+      }
+      if ( this.options.startInput ) {
+        this.setInput( "start", this.options.startInput );
+      }
+      if ( this.options.endInput ) {
+        this.setInput( "end", this.options.endInput );
+      }
+    },
+    setInput: function( type, input ) {
+      var $input = $( input );
+      if ( ! $input.length ) {
+        return this;
+      }
+    },
+    attach: function( $el ) {
+      if ( this.el ) {
+        this.el.appendTo( $el );
+      }
+      return this;
     },
     get: function( date ) {
       var diff;
       if ( ! App.Utils.isDate(date) && typeof date === "number" ) {
         diff = date;
-        date = App.Utils.addMonth( rightNow, diff )
+        date = App.Utils.addMonth( rightNow, diff );
       } else {
         diff = App.Utils.monthDiff( rightNow, date );
       }
       if ( diff >= 0 &&
-           (confs.maxCalendars === 0 || diff < confs.maxCalendars) ) {
+           (this.options.maxCalendars === 0 || diff < this.options.maxCalendars) ) {
         return this.Calendars[ diff ] ||
-        ( this.Calendars[ diff ] = new App.Calendar( date ) );
+        ( this.Calendars[ diff ] = (new App.Calendar(date)).attach(this.el) );
       }
       throw new Error( "get fail" );
     },
     show: function( date, index ) {
       if ( typeof index !== "number" ||
            index < 0 ||
-           index > confs.numberOfCalendars - 1 ) {
+           index > this.options.numberOfCalendars - 1 ) {
         // default to middle
-        index = Math.ceil( confs.numberOfCalendars / 2 ) - 1;
+        index = Math.ceil( this.options.numberOfCalendars / 2 ) - 1;
       }
       if ( typeof date === "string" && Utils.isDate(this.dates[date]) ) {
         date = this.dates[date];
+        if ( date === "start" ) {
+          index = 0;
+        } else if ( date === "end" ) {
+          index = this.options.numberOfCalendars - 1;
+        }
       }
       if ( App.Utils.isDate(date) ) {
         var diff = App.Utils.monthDiff( rightNow, date );
-        if ( diff < 0 || (confs.maxCalendars !== 0 && diff >= confs.maxCalendars) ) {
+        if ( diff < 0 || (this.options.maxCalendars !== 0 && diff >= this.options.maxCalendars) ) {
           return this;
         } else {
           if ( diff < index ) {
             index = diff;
           } else {
-            if ( confs.maxCalendars ) {
-              if ( confs.numberOfCalendars > confs.maxCalendars - diff ) {
-                index = confs.numberOfCalendars - confs.maxCalendars + diff;
+            if ( this.options.maxCalendars ) {
+              if ( this.options.numberOfCalendars > this.options.maxCalendars - diff ) {
+                index = this.options.numberOfCalendars - this.options.maxCalendars + diff;
               }
             }
           }
@@ -67,7 +91,7 @@ $(function(){
         this.hide();
         var numCalendars = -1, showIndex;
         this.visibleIndexes = [];
-        while( ++numCalendars < confs.numberOfCalendars ) {
+        while( ++numCalendars < this.options.numberOfCalendars ) {
           showIndex = diff - index + numCalendars;
           this.visibleIndexes.push( showIndex );
           calendar = this.get( showIndex );
@@ -75,8 +99,8 @@ $(function(){
           calendar.togglePreviousButton( numCalendars === 0 &&
                                          showIndex !== 0 );
           calendar.toggleNextButton(
-            numCalendars === confs.numberOfCalendars - 1 &&
-            showIndex !== confs.maxCalendars - 1
+            numCalendars === this.options.numberOfCalendars - 1 &&
+            showIndex !== this.options.maxCalendars - 1
           );
         }
         this.drawState( this.dates.start, this.dates.end );
@@ -125,7 +149,7 @@ $(function(){
         this.drawState( this.dates.start, this.dates.end );
       } else if ( type === "end" ) {
         if ( Utils.isDate(date) && ! this.isVisible(date) ) {
-          this.show( date, confs.numberOfCalendars - 1 );
+          this.show( date, this.options.numberOfCalendars - 1 );
         }
         this.drawState( this.dates.start, this.dates.end );
       }
@@ -139,7 +163,7 @@ $(function(){
       this.show( this.get( this.visibleIndexes[0] + steps ).dateObject, 0 );
     },
     nextPage: function() {
-      this.next( confs.numberOfCalendars );
+      this.next( this.options.numberOfCalendars );
     },
     previous: function( steps ) {
       steps = parseInt( steps, 10 );
@@ -150,7 +174,7 @@ $(function(){
       this.show( this.get( this.visibleIndexes[ last ] - steps ).dateObject, last );
     },
     previousPage: function() {
-      this.previous( confs.numberOfCalendars );
+      this.previous( this.options.numberOfCalendars );
     },
     isVisible: function( date ) {
       var diff = Utils.monthDiff( rightNow, date );
@@ -180,6 +204,15 @@ $(function(){
       return this;
     }
   } );
+
+  Calendeer.defaults = {
+    target: null,
+    startInput: null,
+    endInput: null,
+    eventDelegate: null,
+    numberOfCalendars: 2,
+    maxCalendars: 0
+  };
 
   window.App = window.App || {};
   window.App.Calendeer = Calendeer;

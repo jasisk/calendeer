@@ -140,8 +140,15 @@ $(function(){
       e.calendeer.append( e.header );
       e.calendeer.append( e.grid );
 
+      this.el = e.calendeer;
       $(".calendeers").append( e.calendeer );
 
+    },
+    attach: function( $el ) {
+      if ( this.el ) {
+        this.el.appendTo( $el );
+      }
+      return this;
     },
 
     togglePreviousButton: function( visible ) {

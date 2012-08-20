@@ -2,8 +2,6 @@ Documentation to follow once this blitz is over.
 
 ### Todo
 * Add event handlers
-* Generate base element
-* Append in `Calendeer`
 * Write tests (whoops)
 * CLEAN
 
