@@ -83,7 +83,7 @@ $(function(){
       var useSugar = this.options.useSugar;
       this.el.bind( "setDate", { type: type }, function( e, type, date, suppress ) {
         if ( type === e.data.type && ! suppress ) {
-          if ( useSugar ) {
+          if ( useSugar && Utils.isDate(date) && date.isValid() ) {
             date = date.short();
           }
           $input.val( date );
