@@ -329,7 +329,7 @@ $(function(){
     eventDelegate: null,
     numberOfCalendars: 2,
     maxCalendars: 0,
-    useSugar: false
+    useSugar: typeof (new Date()).isValid === "function"
   };
 
   window.App = window.App || {};
