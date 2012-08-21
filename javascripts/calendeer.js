@@ -53,13 +53,24 @@ $(function(){
       } );
     },
     inputHandler: function( event ) {
-      var date,
+      var date, isValid,
           data = event.data,
           $this = $( this ),
-          parsed = Date.parse( $this.val() );
-      if ( parsed ) {
-        date = new Date( parsed );
-        data.scope.setDate( data.type, date, true );
+          val = $this.val();
+
+      if ( data.scope.options.useSugar ) {
+        isValid = false;
+        if ( $.trim(val) ) {
+          date = Date.create( val );
+          isValid = date.isValid();
+        }
+      } else {
+        isValid = Date.parse( val );
+        date = new Date( isValid );
+      }
+
+      if ( isValid ) {
+        data.scope.setDate( data.type, Utils.trimDate(date), true );
       } else {
         data.scope.clearDates( data.type, true );
       }
@@ -69,8 +80,12 @@ $(function(){
       if ( ! $input.length ) {
         return this;
       }
+      var useSugar = this.options.useSugar;
       this.el.bind( "setDate", { type: type }, function( e, type, date, suppress ) {
         if ( type === e.data.type && ! suppress ) {
+          if ( useSugar ) {
+            date = date.short();
+          }
           $input.val( date );
         }
       } );
@@ -313,7 +328,8 @@ $(function(){
     endInput: null,
     eventDelegate: null,
     numberOfCalendars: 2,
-    maxCalendars: 0
+    maxCalendars: 0,
+    useSugar: false
   };
 
   window.App = window.App || {};
