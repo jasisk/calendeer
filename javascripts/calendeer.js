@@ -96,10 +96,26 @@ $(function(){
       }
       if ( diff >= 0 &&
            (this.options.maxCalendars === 0 || diff < this.options.maxCalendars) ) {
-        return this.Calendars[ diff ] ||
-        ( this.Calendars[ diff ] = (new App.Calendar(date)).attach(this.el) );
+        if ( this.Calendars[diff] ) {
+          return this.Calendars[ diff ];
+        } else {
+          var calendar = this.Calendars[ diff ] = new App.Calendar(date);
+          calendar.attach.apply( calendar, this.attachmentPoint(diff) );
+          return calendar;
+        }
       }
       throw new Error( "get fail" );
+    },
+    attachmentPoint: function( diff ) {
+      var attachment;
+      while( diff-- && attachment === undefined ) {
+        attachment = this.Calendars[diff];
+      }
+      if ( attachment === undefined ) {
+        return [ this.el ];
+      } else {
+        return [ attachment.el, true ];
+      }
     },
     toggleFocused: function( focused ) {
       if ( focused !== "start" && focused !== "end" ) {

@@ -144,9 +144,14 @@ $(function(){
       $(".calendeers").append( e.calendeer );
 
     },
-    attach: function( $el ) {
-      if ( this.el ) {
-        this.el.appendTo( $el );
+    attach: function( $el, sibling ) {
+      if ( ! this.el ) {
+        return this;
+      }
+      if ( sibling ) {
+        this.el.insertAfter( $el );
+      } else {
+        this.el.prependTo( $el );
       }
       return this;
     },
