@@ -24,15 +24,25 @@ $(function(){
       this.show( date );
       this.toggleFocused( "start" );
       this.setupHandlers();
-      if ( this.options.target ) {
-        this.attach( this.options.target );
-      }
-      if ( this.options.startInput ) {
-        this.setupInput( "start", this.options.startInput );
-      }
-      if ( this.options.endInput ) {
-        this.setupInput( "end", this.options.endInput );
-      }
+      this.handleOptions( this.options );
+    },
+    handleOptions: function( options ) {
+      var self = this,
+          actions = {
+            target: this.attach,
+            startInput: function( input ) {
+              this.setupInput( "start", input );
+            },
+            endInput: function( input ) {
+              this.setupInput( "end", input );
+            }
+          };
+
+      $.each( options, function(k, v) {
+        if ( Object.prototype.hasOwnProperty.call(actions, k) ) {
+          actions[k].call( self, v );
+        }
+      } );
     },
     setupHandlers: function() {
       this.el.on( "mouseup", ".calendeer-day", {scope: this}, function( event ) {
@@ -329,6 +339,7 @@ $(function(){
     eventDelegate: null,
     numberOfCalendars: 2,
     maxCalendars: 0,
+    timeSupport: true,
     useSugar: typeof (new Date()).isValid === "function"
   };
 
