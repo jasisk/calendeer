@@ -37,6 +37,7 @@ $(function(){
           noon.setMilliseconds(0);
       this.setTime("start", noon, false );
       this.setTime("end", noon, false );
+      this.preload();
     },
     get: function( type ) {
       if ( Utils.isDate( this.dates[type] ) &&
@@ -103,6 +104,25 @@ $(function(){
       this.el.on( "mousedown", ".calendeer-next, .calendeer-previous, .calendeer-day", function( e ) {
         e.preventDefault();
       } );
+    },
+    preload: function() {
+      var $input, existingDate;
+      if ( this.options.startInput ) {
+        $input = $( this.options.startInput );
+        existingDate = Date.parse( $input.val() );
+        if (! isNaN(existingDate) ) {
+          existingDate = new Date( existingDate );
+          this.set( "start", existingDate );
+        }
+      }
+      if ( this.options.endInput ) {
+        $input = $( this.options.endInput );
+        existingDate = Date.parse( $input.val() );
+        if (! isNaN(existingDate) ) {
+          existingDate = new Date( existingDate );
+          this.set( "end", existingDate );
+        }
+      }
     },
     inputHandler: function( event ) {
       var date, isValid,
@@ -181,11 +201,6 @@ $(function(){
           $input.val( date );
         }
       } );
-      var existingDate = Date.parse( $input.val() );
-      if (! isNaN(existingDate) ) {
-        existingDate = new Date( existingDate );
-        this.set( type, existingDate );
-      }
 
       $input.on( "keyup.calendeer." + type, { type: type, scope: this }, this.inputHandler );
       $input.on( "focus.calendeer." + type, { type: type, scope: this }, $.proxy( function(e) {
