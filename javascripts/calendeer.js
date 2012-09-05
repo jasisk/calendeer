@@ -171,7 +171,7 @@ $(function(){
       this.el.bind( "setDate", { type: type }, function( e, type, date, suppress ) {
         if ( type === e.data.type && ! suppress ) {
           if ( useSugar && Utils.isDate(date) && date.isValid() ) {
-            date = date.short();
+            date = date.format( "{Month} {date}, {year}" );
           }
           $input.val( date );
         }

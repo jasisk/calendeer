@@ -40,7 +40,7 @@ $(function(){
     } );
 
     return function() {
-      calendeer.el.insertAfter( $endTimeInput );      
+      calendeer.el.insertAfter( $endTimeInput );
     };
 
   };
