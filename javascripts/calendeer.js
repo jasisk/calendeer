@@ -5,13 +5,18 @@ $(function(){
   var Calendeer = function( options ) {
     var opts = $.extend( {},Calendeer.defaults, options );
     this.dates = {
-      today: Utils.trimDate( rightNow ),
+      today: opts.timeSupport ? rightNow : Utils.trimDate( rightNow ),
+      start: null,
+      end: null
+    };
+    this.times = {
       start: null,
       end: null
     };
     this.options = opts;
     this.Calendars = {};
     this.focused = "start";
+    this.timeFocused = "start";
     this.visibleIndexes = [];
     this.setup();
   };
@@ -25,7 +30,22 @@ $(function(){
       this.toggleFocused( "start" );
       this.setupHandlers();
       this.handleOptions( this.options );
+      var noon = new Date();
+          noon.setHours(12);
+          noon.setMinutes(0);
+          noon.setSeconds(0);
+          noon.setMilliseconds(0);
+      this.setTime("start", noon, false );
+      this.setTime("end", noon, false );
     },
+    get: function( type ) {
+      if ( Utils.isDate( this.dates[type] ) &&
+           Utils.isDate( this.times[type] ) ) {
+        return Utils.combineDateTime( this.dates[type], this.times[type] );
+      }
+      return;
+    },
+    set: function( type, date ) {},
     handleOptions: function( options ) {
       var self = this,
           actions = {
@@ -35,6 +55,16 @@ $(function(){
             },
             endInput: function( input ) {
               this.setupInput( "end", input );
+            },
+            startTimeInput: function( input ) {
+              if ( options.timeSupport ) {
+                this.setupTimeInput( "start", input );
+              }
+            },
+            endTimeInput: function( input ) {
+              if ( options.timeSupport ) {
+                this.setupTimeInput( "end", input );
+              }
             }
           };
 
@@ -47,7 +77,14 @@ $(function(){
     setupHandlers: function() {
       this.el.on( "mouseup", ".calendeer-day", {scope: this}, function( event ) {
         var self = event.data.scope;
-        self.setDate( self.focused, $(this).data("calendeer").dateObject );
+        var date = self.options.timeSupport ?
+          Utils.combineDateTime(
+            $(this).data("calendeer").dateObject,
+            self.times[self.focused]
+          ) :
+          $(this).data("calendeer").dateObject;
+
+        self.setDate( self.focused, date );
       } );
       this.el.on( "mouseenter", ".calendeer-day", function( event ) {
         var data = $( this ).data( "calendeer" );
@@ -85,6 +122,46 @@ $(function(){
         data.scope.clearDates( data.type, true );
       }
     },
+    inputTimeHandler: function( event ) {
+      var date, isValid,
+          data = event.data,
+          $this = $( this ),
+          val = $this.val();
+
+      isValid = false;
+      if ( $.trim(val) ) {
+        date = Date.create( val );
+        isValid = date.isValid();
+      }
+
+      if ( isValid ) {
+        data.scope.setTime( data.type, date, true );
+      } else {
+        data.scope.clearTimes( data.type, true );
+      }
+    },
+    setupTimeInput: function( type, input ) {
+      var $input = $( input );
+      if ( ! $input.length ) {
+        return this;
+      }
+      var useSugar = this.options.useSugar;
+      this.el.bind( "setTime", { type: type }, function( e, type, date, suppress ) {
+        if ( type === e.data.type && ! suppress ) {
+          if ( useSugar && Utils.isDate(date) && date.isValid() ) {
+            date = date.format( "{h}:{mm}{tt}" );
+          } else {
+            throw new Error( "Config error. Time support requires sugar." );
+          }
+          $input.val( date );
+        }
+      } );
+      $input.on( "keyup.calendeer." + type, { type: type, scope: this }, this.inputTimeHandler );
+      $input.on( "focus.calendeer." + type, { type: type, scope: this }, $.proxy( function(e) {
+        this.toggleTimeFocused(e.data.type);
+        this.show( e.data.type );
+      }, this ) );
+    },
     setupInput: function( type, input ) {
       var $input = $( input );
       if ( ! $input.length ) {
@@ -111,7 +188,7 @@ $(function(){
       }
       return this;
     },
-    get: function( date ) {
+    getCalendar: function( date ) {
       var diff;
       if ( ! App.Utils.isDate(date) && typeof date === "number" ) {
         diff = date;
@@ -160,6 +237,24 @@ $(function(){
         this.el.removeClass( "end-focus" );
       }
     },
+    toggleTimeFocused: function( focused ) {
+      if ( focused !== "start" && focused !== "end" ) {
+        focused = this.timeFocused === "start" ? "end" : "start";
+      }
+      if ( focused === "end" ) {
+        $( this.options.endTimeInput ).addClass( "calendeer-focused-input" );
+        $( this.options.startTimeInput ).removeClass( "calendeer-focused-input" );
+        this.timeFocused = "end";
+        this.el.addClass( "end-time-focus" );
+        this.el.removeClass( "start-time-focus" );
+      } else {
+        $( this.options.startTimeInput ).addClass( "calendeer-focused-input" );
+        $( this.options.endTimeInput ).removeClass( "calendeer-focused-input" );
+        this.timeFocused = "start";
+        this.el.addClass( "start-time-focus" );
+        this.el.removeClass( "end-time-focus" );
+      }
+    },
     show: function( date, index ) {
       if ( typeof index !== "number" ||
            index < 0 ||
@@ -199,7 +294,7 @@ $(function(){
         while( ++numCalendars < this.options.numberOfCalendars ) {
           showIndex = diff - index + numCalendars;
           this.visibleIndexes.push( showIndex );
-          calendar = this.get( showIndex );
+          calendar = this.getCalendar( showIndex );
           calendar.show();
           calendar.togglePreviousButton( numCalendars === 0 &&
                                          showIndex !== 0 );
@@ -242,13 +337,32 @@ $(function(){
         this.drawState( this.dates.start, this.dates.end );
       }
     },
+    clearTimes: function( type, fromHandler ) {
+      if ( typeof type === "string" && this.dates[type] !== undefined ) {
+        type = type.toLowerCase();
+        this.times[type] = rightNow;
+        if ( type !== "start" && type !== "end" ) {
+          delete this.times[type];
+        } else {
+          this.el.removeClass( type + "-time" );
+          this.el.trigger( "setTime", [type, rightNow, fromHandler] );
+        }
+      } else {
+        this.dates.start = null;
+        this.dates.end = null;
+        this.drawState( this.dates.start, this.dates.end );
+      }
+    },
     validateDate: function( date, type ) {
-      var conditions = Utils.isDate( date ) &&
-          Utils.dateComparator( date, this.dates.today ) + 1 &&
-          ( this.options.maxCalendars !== 0 ?
+      var dateConditions = Utils.isDate( date ),
+          futureConditions = ( this.options.maxCalendars !== 0 ?
           Utils.monthDiff( this.dates.today, date ) < this.options.maxCalendars :
-          true );
-      return conditions;
+          true ),
+          pastConditions = Utils.dateTimeComparator( date, this.dates.today ) + 1;
+
+      return !! ( dateConditions &&
+             futureConditions &&
+             pastConditions );
     },
     setDate: function( type, date, fromHandler ) {
       if ( typeof type !== "string" ||
@@ -277,8 +391,31 @@ $(function(){
         this.drawState( this.dates.start, this.dates.end );
       }
       this.el.trigger( "setDate", [type, date, fromHandler] );
+      var dateTime = this.get( type );
+      if ( dateTime != undefined ) {
+        this.el.trigger( "setDateTime", [type, Utils.toISO(dateTime), dateTime] );
+      }
       if ( ! fromHandler ) {
         this.toggleFocused();
+      }
+      return this;
+    },
+    setTime: function( type, date, fromHandler ) {
+      if ( typeof type !== "string" ||
+           ( ! Utils.isDate(date) && date != undefined  ) ) {
+        throw new Error( "setTime invalid arguments" );
+      }
+      type = type.toLowerCase();
+      // if ( ! this.validateDate( date, type ) ) return this;
+      this.times[ type ] = date;
+      this.el.addClass( type + "-time" );
+      this.el.trigger( "setTime", [type, date, fromHandler] );
+      var dateTime = this.get( type );
+      if ( dateTime != undefined ) {
+        this.el.trigger( "setDateTime", [type, Utils.toISO(dateTime), dateTime] );
+      }
+      if ( ! fromHandler ) {
+        this.toggleTimeFocused();
       }
       return this;
     },
@@ -287,7 +424,7 @@ $(function(){
       if ( isNaN(steps) ) {
         steps = 1;
       }
-      this.show( this.get( this.visibleIndexes[0] + steps ).dateObject, 0 );
+      this.show( this.getCalendar( this.visibleIndexes[0] + steps ).dateObject, 0 );
     },
     nextPage: function() {
       this.next( this.options.numberOfCalendars );
@@ -298,7 +435,7 @@ $(function(){
         steps = 1;
       }
       var last = this.visibleIndexes.length - 1;
-      this.show( this.get( this.visibleIndexes[ last ] - steps ).dateObject, last );
+      this.show( this.getCalendar( this.visibleIndexes[ last ] - steps ).dateObject, last );
     },
     previousPage: function() {
       this.previous( this.options.numberOfCalendars );
