@@ -45,7 +45,12 @@ $(function(){
       }
       return;
     },
-    set: function( type, date ) {},
+    set: function( type, date ) {
+      if ( Utils.isDate(date) && this.validateDate(date, type) ) {
+        this.setDate(type, date);
+        if ( this.options.timeSupport ) { this.setTime(type, date); }
+      }
+    },
     handleOptions: function( options ) {
       var self = this,
           actions = {
@@ -176,6 +181,12 @@ $(function(){
           $input.val( date );
         }
       } );
+      var existingDate = Date.parse( $input.val() );
+      if (! isNaN(existingDate) ) {
+        existingDate = new Date( existingDate );
+        this.set( type, existingDate );
+      }
+
       $input.on( "keyup.calendeer." + type, { type: type, scope: this }, this.inputHandler );
       $input.on( "focus.calendeer." + type, { type: type, scope: this }, $.proxy( function(e) {
         this.toggleFocused(e.data.type);
