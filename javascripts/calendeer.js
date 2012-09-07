@@ -211,8 +211,26 @@ $(function(){
     attach: function( $el ) {
       if ( this.el ) {
         this.el.appendTo( $el );
+        if ( this._eventQueue ) {
+          var currentEvent;
+          while ( currentEvent = this._eventQueue.shift() ) {
+            this.emitEvent( currentEvent[0], currentEvent[1] );
+          }
+          delete this._eventQueue;
+        }
       }
       return this;
+    },
+    emitEvent: function( eventType, args ) {
+      if ( this.el.parent().length ) {
+        this.emitEvent = function( _eventType, _args ) {
+          this.el.trigger( _eventType, _args );
+        };
+        this.emitEvent( eventType, args );
+      } else {
+        this._eventQueue = this._eventQueue || [];
+        this._eventQueue.push( [eventType, args] );
+      }
     },
     getCalendar: function( date ) {
       var diff;
@@ -354,7 +372,7 @@ $(function(){
           delete this.dates[type];
         } else {
           this.el.removeClass( type + "-date" );
-          this.el.trigger( "setDate", [type, null, fromHandler] );
+          this.emitEvent( "setDate", [type, null, fromHandler] );
           this.drawState( this.dates.start, this.dates.end );
         }
       } else {
@@ -371,7 +389,7 @@ $(function(){
           delete this.times[type];
         } else {
           this.el.removeClass( type + "-time" );
-          this.el.trigger( "setTime", [type, rightNow, fromHandler] );
+          this.emitEvent( "setTime", [type, rightNow, fromHandler] );
         }
       } else {
         this.dates.start = null;
@@ -416,10 +434,10 @@ $(function(){
         }
         this.drawState( this.dates.start, this.dates.end );
       }
-      this.el.trigger( "setDate", [type, date, fromHandler] );
+      this.emitEvent( "setDate", [type, date, fromHandler] );
       var dateTime = this.get( type );
       if ( dateTime != undefined ) {
-        this.el.trigger( "setDateTime", [type, Utils.toISO(dateTime), dateTime] );
+        this.emitEvent( "setDateTime", [type, Utils.toISO(dateTime), dateTime] );
       }
       if ( ! fromHandler ) {
         this.toggleFocused();
@@ -435,10 +453,10 @@ $(function(){
       // if ( ! this.validateDate( date, type ) ) return this;
       this.times[ type ] = date;
       this.el.addClass( type + "-time" );
-      this.el.trigger( "setTime", [type, date, fromHandler] );
+      this.emitEvent( "setTime", [type, date, fromHandler] );
       var dateTime = this.get( type );
       if ( dateTime != undefined ) {
-        this.el.trigger( "setDateTime", [type, Utils.toISO(dateTime), dateTime] );
+        this.emitEvent( "setDateTime", [type, Utils.toISO(dateTime), dateTime] );
       }
       if ( ! fromHandler ) {
         this.toggleTimeFocused();
