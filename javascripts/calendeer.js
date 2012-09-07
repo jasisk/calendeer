@@ -211,13 +211,17 @@ $(function(){
     attach: function( $el ) {
       if ( this.el ) {
         this.el.appendTo( $el );
-        if ( this._eventQueue ) {
-          var currentEvent;
-          while ( currentEvent = this._eventQueue.shift() ) {
-            this.emitEvent( currentEvent[0], currentEvent[1] );
-          }
-          delete this._eventQueue;
+        this.clearEventQueue();
+      }
+      return this;
+    },
+    clearEventQueue: function() {
+      if ( this._eventQueue ) {
+        var currentEvent;
+        while ( currentEvent = this._eventQueue.shift() ) {
+          this.emitEvent( currentEvent[0], currentEvent[1] );
         }
+        delete this._eventQueue;
       }
       return this;
     },
