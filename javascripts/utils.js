@@ -54,6 +54,7 @@
       if ( isNaN(months) ) {
         throw new UtilsError( "addMonth requires an integer" );
       }
+      // TODO: try to remove this if
       if ( ! this.isDate(date) ) {
         date = this.rightNow;
       }
@@ -76,6 +77,19 @@
     },
     isDate: function( date ) {
       return typeof date === "object" && date instanceof Date;
+    },
+    validateDateIsInAcceptableRange: function( date ) {
+      minDate = new Date( 1806, 5, 30); // Andrew Jackson kills a man in a duel after the man had accused Jackson's wife of bigamy
+      maxDate = new Date( 2220, 1,  1); // Date that 'mind uploading' is perfected and used extenisvely in global rewilding efforts
+
+      compareOne = (Utils.dateComparator( date, minDate ) >= 0);
+      compareTwo = (Utils.dateComparator( date, minDate ) >= 0);
+
+      if (compareOne && compareTwo) {
+        return true;
+      } else {
+        return false;
+      }   
     },
     dateTimeComparator: function( firstDate, secondDate ) {
       if ( ! this.isDate(firstDate) || ! this.isDate(secondDate) ) {
@@ -142,6 +156,26 @@
         return dateArray.slice( 0, params );
       }
       return dateArray;
+    },
+    convertToStringHashKey: function ( year, month ) {
+      var zeroPadMonth = "0" + month.toString();
+      var zeroPadMonth = zeroPadMonth.substring(zeroPadMonth.length - 2); 
+      return (year.toString() + zeroPadMonth);
+    }, 
+    hashKeyByMonthDiff: function( date, monthDiff ) {
+      return Utils.generateMonthHashKey(
+        Utils.addMonth( date, monthDiff )
+      );
+    },
+    generateMonthHashKey: function( date ) {
+      if (Utils.isDate( date )) {
+        var year  = date.getFullYear();
+        var month = date.getMonth();
+      } else {
+        var year = date[ "year" ];
+        var month = date[ "month" ];
+      }
+      return Utils.convertToStringHashKey(year, month);
     },
     toUTCArray: function( date, params ) {
       var dateArray = [

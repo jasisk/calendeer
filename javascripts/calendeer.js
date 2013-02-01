@@ -27,7 +27,6 @@ $(function(){
           date = rightNow;
       this.el = $( "<div></div>", {"class": "calendeers"} );
       this.show( date );
-      this.toggleFocused( "start" );
       this.setupHandlers();
       this.handleOptions( this.options );
       var noon = new Date();
@@ -38,6 +37,7 @@ $(function(){
       this.setTime("start", noon, false );
       this.setTime("end", noon, false );
       this.preload();
+      this.toggleFocused( "start", false );
     },
     get: function( type ) {
       if ( Utils.isDate( this.dates[type] ) &&
@@ -47,7 +47,11 @@ $(function(){
       return;
     },
     set: function( type, date ) {
-      if ( Utils.isDate(date) && this.validateDate(date, type) ) {
+      if ( Utils.isDate(date) ) {
+        this.setDate(type, date);
+        if ( this.options.timeSupport ) { this.setTime(type, date); }
+      } else if( typeof date === "number") {
+        date = new Date( date );
         this.setDate(type, date);
         if ( this.options.timeSupport ) { this.setTime(type, date); }
       }
@@ -92,9 +96,25 @@ $(function(){
 
         self.setDate( self.focused, date );
       } );
+
+      var that = this;
+      this.el.on( "mouseenter", function( event ) {
+        var clazzes = that.el.attr("class");
+
+        if (clazzes.indexOf( "start-focus" ) !== -1) {
+          $( that.options.startInput ).addClass( "calendeer-focused-input-start" );
+        } else {
+          $( that.options.endInput ).addClass( "calendeer-focused-input-end" );
+        }
+      } );
+      this.el.on( "mouseleave", function( event ) {
+        $( that.options.startInput ).removeClass( "calendeer-focused-input-start" );
+        $( that.options.endInput   ).removeClass( "calendeer-focused-input-end" );
+      } );
+
       this.el.on( "mouseenter", ".calendeer-day", function( event ) {
         var data = $( this ).data( "calendeer" );
-        if ( ! data.isPast() ) data.el.addClass( "hovered" );
+        data.el.addClass( "hovered" );
       } );
       this.el.on( "mouseleave", ".calendeer-day", function( event ) {
         $( this ).data( "calendeer" ).el.removeClass( "hovered" );
@@ -109,10 +129,9 @@ $(function(){
       var $input, existingDate;
       if ( this.options.startInput ) {
         $input = $( this.options.startInput );
-        existingDate = Date.parse( $input.val() );
-        if (! isNaN(existingDate) ) {
-          existingDate = new Date( existingDate );
-          this.set( "start", existingDate );
+        existingDate = Date.create( $input.val() );
+        if ( existingDate.isValid() ) {
+          this.set( "start", Date.parse(existingDate) );
         }
       }
       if ( this.options.endInput ) {
@@ -141,10 +160,10 @@ $(function(){
         date = new Date( isValid );
       }
 
+      isValid = isValid && Utils.validateDateIsInAcceptableRange( date );
+
       if ( isValid ) {
         data.scope.setDate( data.type, Utils.trimDate(date), true );
-      } else {
-        data.scope.clearDates( data.type, true );
       }
     },
     inputTimeHandler: function( event ) {
@@ -181,6 +200,7 @@ $(function(){
           $input.val( date );
         }
       } );
+
       $input.on( "keyup.calendeer." + type, { type: type, scope: this }, this.inputTimeHandler );
       $input.on( "focus.calendeer." + type, { type: type, scope: this }, $.proxy( function(e) {
         this.toggleTimeFocused(e.data.type);
@@ -204,7 +224,7 @@ $(function(){
 
       $input.on( "keyup.calendeer." + type, { type: type, scope: this }, this.inputHandler );
       $input.on( "focus.calendeer." + type, { type: type, scope: this }, $.proxy( function(e) {
-        this.toggleFocused(e.data.type);
+        this.toggleFocused(e.data.type, false );
         this.show( e.data.type );
       }, this ) );
     },
@@ -237,49 +257,118 @@ $(function(){
       }
     },
     getCalendar: function( date ) {
-      var diff;
-      if ( ! App.Utils.isDate(date) && typeof date === "number" ) {
-        diff = date;
-        date = App.Utils.addMonth( rightNow, diff );
-      } else {
-        diff = App.Utils.monthDiff( rightNow, date );
+      var hashKey = "";
+      if ( ! Utils.isDate(date) && typeof date === "number" ) {
+        date    = Utils.addMonth( rightNow, date );
+        hashKey = Utils.generateMonthHashKey( date );
+      } else if( typeof date === "string" ) {
+        hashKey = date;
       }
-      if ( diff >= 0 &&
-           (this.options.maxCalendars === 0 || diff < this.options.maxCalendars) ) {
-        if ( this.Calendars[diff] ) {
-          return this.Calendars[ diff ];
-        } else {
-          var calendar = this.Calendars[ diff ] = new App.Calendar(date);
-          calendar.attach.apply( calendar, this.attachmentPoint(diff) );
-          return calendar;
-        }
+
+      var hashEntry = this.Calendars[ hashKey ];
+
+      // check if element exists in hash already, otherwise
+      // create it in the key value store
+      if ( hashEntry ) {
+        return hashEntry;
+      } else {
+        // create and insert into hash
+        hashYear  = parseInt( hashKey.substring(0, 4), 10);
+        hashMonth = parseInt( hashKey.substring(4)   , 10);
+        var calendar = this.Calendars[ hashKey ] = new App.Calendar(hashMonth, hashYear);
+        // insert into DOM
+        calendar.attach.apply(calendar, this.attachmentPoint( calendar.dateObject ));
+        return calendar;
       }
       throw new Error( "get fail" );
     },
-    attachmentPoint: function( diff ) {
+    attachmentPoint: function( date ) {
       var attachment;
-      while( diff-- && attachment === undefined ) {
-        attachment = this.Calendars[diff];
+
+
+      var firstDOMMonth = this.el.children(":first");
+
+      // if no DOM element exists, we can just attach as child of calendeers div
+      if ( firstDOMMonth.length === 0 ){
+        return [ this.el , "prepend" ];
       }
-      if ( attachment === undefined ) {
-        return [ this.el ];
-      } else {
-        return [ attachment.el, true ];
+
+      // if this month is before the first DOM element, insert before that element
+      var dateComparison = Utils.dateComparator( 
+        date, firstDOMMonth.data('calendeer').dateObject 
+      );
+      if (dateComparison < 0) {
+        return [ this.el, "prepend" ];
+      } else if ( dateComparison === 0) {
+        // don't attach; this is handled by Calendar.attach
+        return undefined;
       }
+
+      var lastDOMMonth = this.el.children(":last");
+
+      dateComparison = Utils.dateComparator( 
+        date, lastDOMMonth.data('calendeer').dateObject 
+      );
+      if ( dateComparison === 0) {
+        // this is a special case, because the element we are trying to place,
+        // when it is created, is placed at the end of the month elements. So 
+        // if the elements are for the same month, we actually want to use the
+        // one before this element because it is the actual last month in the DOM
+        lastDOMMonth = lastDOMMonth.prev();
+      }
+
+      // if this month is after the last DOM element, insert after that element
+      dateComparison = Utils.dateComparator( 
+        date, lastDOMMonth.data('calendeer').dateObject 
+      );
+      if (dateComparison > 0) {
+        return [ this.el , "append" ];
+      } else if ( dateComparison === 0 ) {
+        // don't attach; this is handled by Calendar.attach
+        return undefined;
+      }
+
+      // otherwise, find most recent month before the current month,
+      // and use that as an attachment point
+      while( attachment === undefined ) {
+        var currKey = Utils.hashKeyByMonthDiff( date, -1 );
+        date = Utils.addMonth( date, -1 );
+        attachment = this.Calendars[ currKey ]
+      }
+
+      return [ attachment.el, "sibling" ];
     },
-    toggleFocused: function( focused ) {
+    toggleFocused: function( focused, addHighlighting ) {
       if ( focused !== "start" && focused !== "end" ) {
         focused = this.focused === "start" ? "end" : "start";
       }
       if ( focused === "end" ) {
-        $( this.options.endInput ).addClass( "calendeer-focused-input" );
         $( this.options.startInput ).removeClass( "calendeer-focused-input" );
+        $( this.options.endInput   ).addClass(    "calendeer-focused-input" );
+
+        if ( addHighlighting ) {
+          $( this.options.startInput ).removeClass( "calendeer-focused-input-start" );
+          $( this.options.endInput   ).addClass(    "calendeer-focused-input-end" );
+        } else {
+          $( this.options.startInput ).removeClass( "calendeer-focused-input-start" );
+          $( this.options.endInput   ).removeClass( "calendeer-focused-input-end" );
+        }
+
         this.focused = "end";
         this.el.addClass( "end-focus" );
         this.el.removeClass( "start-focus" );
       } else {
-        $( this.options.startInput ).addClass( "calendeer-focused-input" );
-        $( this.options.endInput ).removeClass( "calendeer-focused-input" );
+        $( this.options.startInput ).addClass(    "calendeer-focused-input" );
+        $( this.options.endInput   ).removeClass( "calendeer-focused-input" );
+
+        if ( addHighlighting ) {
+          $( this.options.endInput   ).removeClass( "calendeer-focused-input-end" );
+          $( this.options.startInput ).addClass(    "calendeer-focused-input-start" );
+        } else {
+          $( this.options.endInput   ).removeClass( "calendeer-focused-input-end" );
+          $( this.options.startInput ).removeClass( "calendeer-focused-input-start" );
+        }
+
         this.focused = "start";
         this.el.addClass( "start-focus" );
         this.el.removeClass( "end-focus" );
@@ -321,34 +410,20 @@ $(function(){
           return this;
         }
       }
-      if ( App.Utils.isDate(date) ) {
-        var diff = App.Utils.monthDiff( rightNow, date );
-        if ( diff < 0 || (this.options.maxCalendars !== 0 && diff >= this.options.maxCalendars) ) {
-          return this;
-        } else {
-          if ( diff < index ) {
-            index = diff;
-          } else {
-            if ( this.options.maxCalendars ) {
-              if ( this.options.numberOfCalendars > this.options.maxCalendars - diff ) {
-                index = this.options.numberOfCalendars - this.options.maxCalendars + diff;
-              }
-            }
-          }
-        }
+      if ( Utils.isDate(date) ) {
         this.hide();
         var numCalendars = -1, showIndex;
         this.visibleIndexes = [];
         while( ++numCalendars < this.options.numberOfCalendars ) {
-          showIndex = diff - index + numCalendars;
+          showIndex = Utils.hashKeyByMonthDiff( date, numCalendars - index );
           this.visibleIndexes.push( showIndex );
           calendar = this.getCalendar( showIndex );
           calendar.show();
-          calendar.togglePreviousButton( numCalendars === 0 &&
-                                         showIndex !== 0 );
+          calendar.togglePreviousButton( 
+            numCalendars === 0 
+          );
           calendar.toggleNextButton(
-            numCalendars === this.options.numberOfCalendars - 1 &&
-            showIndex !== this.options.maxCalendars - 1
+            numCalendars === this.options.numberOfCalendars - 1
           );
         }
         this.drawState( this.dates.start, this.dates.end );
@@ -368,23 +443,6 @@ $(function(){
       }
       return this;
     },
-    clearDates: function( type, fromHandler ) {
-      if ( typeof type === "string" && this.dates[type] !== undefined ) {
-        type = type.toLowerCase();
-        this.dates[type] = null;
-        if ( type !== "start" && type !== "end" ) {
-          delete this.dates[type];
-        } else {
-          this.el.removeClass( type + "-date" );
-          this.emitEvent( "setDate", [type, null, fromHandler] );
-          this.drawState( this.dates.start, this.dates.end );
-        }
-      } else {
-        this.dates.start = null;
-        this.dates.end = null;
-        this.drawState( this.dates.start, this.dates.end );
-      }
-    },
     clearTimes: function( type, fromHandler ) {
       if ( typeof type === "string" && this.dates[type] !== undefined ) {
         type = type.toLowerCase();
@@ -401,38 +459,20 @@ $(function(){
         this.drawState( this.dates.start, this.dates.end );
       }
     },
-    validateDate: function( date, type ) {
-      var dateConditions = Utils.isDate( date ),
-          futureConditions = ( this.options.maxCalendars !== 0 ?
-          Utils.monthDiff( this.dates.today, date ) < this.options.maxCalendars :
-          true ),
-          pastConditions = Utils.dateTimeComparator( date, this.dates.today ) + 1;
-
-      return !! ( dateConditions &&
-             futureConditions &&
-             pastConditions );
-    },
     setDate: function( type, date, fromHandler ) {
       if ( typeof type !== "string" ||
            ( ! Utils.isDate(date) && date != undefined  ) ) {
         throw new Error( "setDate invalid arguments" );
       }
       type = type.toLowerCase();
-      if ( ! this.validateDate( date, type ) ) return this;
       this.dates[ type ] = date;
       this.el.addClass( type + "-date" );
       if ( type === "start" ) {
-        if ( this.dates.end && Utils.dateComparator(date,this.dates.end)===1 ) {
-          this.clearDates( "end" );
-        }
         if ( Utils.isDate(date) && ! this.isVisible(date) ) {
           this.show( date, 0 );
         }
         this.drawState( this.dates.start, this.dates.end );
       } else if ( type === "end" ) {
-        if ( this.dates.start && Utils.dateComparator(date,this.dates.start)===-1 ) {
-          this.clearDates( "start" );
-        }
         if ( Utils.isDate(date) && ! this.isVisible(date) ) {
           this.show( date, this.options.numberOfCalendars - 1 );
         }
@@ -444,7 +484,7 @@ $(function(){
         this.emitEvent( "setDateTime", [type, Utils.toISO(dateTime), dateTime] );
       }
       if ( ! fromHandler ) {
-        this.toggleFocused();
+        this.toggleFocused( undefined, true );
       }
       return this;
     },
@@ -454,7 +494,6 @@ $(function(){
         throw new Error( "setTime invalid arguments" );
       }
       type = type.toLowerCase();
-      // if ( ! this.validateDate( date, type ) ) return this;
       this.times[ type ] = date;
       this.el.addClass( type + "-time" );
       this.emitEvent( "setTime", [type, date, fromHandler] );
@@ -472,7 +511,9 @@ $(function(){
       if ( isNaN(steps) ) {
         steps = 1;
       }
-      this.show( this.getCalendar( this.visibleIndexes[0] + steps ).dateObject, 0 );
+      var thisDate = this.Calendars[ this.visibleIndexes[0] ].dateObject;
+      var nextMonthHashKey = Utils.hashKeyByMonthDiff( thisDate, steps );
+      this.show( this.getCalendar( nextMonthHashKey ).dateObject, 0 );
     },
     nextPage: function() {
       this.next( this.options.numberOfCalendars );
@@ -483,14 +524,20 @@ $(function(){
         steps = 1;
       }
       var last = this.visibleIndexes.length - 1;
-      this.show( this.getCalendar( this.visibleIndexes[ last ] - steps ).dateObject, last );
+      var thisDate = this.Calendars[ this.visibleIndexes[last] ].dateObject;
+      var prevMonthHashKey = Utils.hashKeyByMonthDiff( thisDate, -steps );
+      this.show( this.getCalendar( prevMonthHashKey ).dateObject, last );
     },
     previousPage: function() {
       this.previous( this.options.numberOfCalendars );
     },
     isVisible: function( date ) {
-      var diff = Utils.monthDiff( rightNow, date );
-      return !!( ~$.inArray(diff, this.visibleIndexes) );
+      // if date is a date object, must convert it to a hash key
+      if ( Utils.isDate(date) ) {
+        date = Utils.generateMonthHashKey( date );
+      }
+      // otherwise just use the given hash key, assuming it is a string
+      return !!( ~$.inArray(date, this.visibleIndexes) );
     },
     callOnVisibles: function() {
       if ( ! arguments.length ) {
@@ -523,7 +570,6 @@ $(function(){
     endInput: null,
     eventDelegate: null,
     numberOfCalendars: 2,
-    maxCalendars: 0,
     timeSupport: true,
     useSugar: typeof (new Date()).isValid === "function"
   };

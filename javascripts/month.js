@@ -45,11 +45,11 @@ $(function(){
       } else if ( typeof month === "string" && ~$.inArray(month.toLowerCase(), months) ) {
         this.month = $.inArray(month.toLowerCase(), months);
       } else {
-        throw new CalendarError( "Invalid month in constructor" );
+        throw new CalendarError( "Invalid month in constructor" + month);
       }
       this.name = this._names.en[ this.month ];
       this.daysInMonth = (function(){
-        month = self.month === 11  ? 0 : self.month + 1;
+        month = (self.month + 1) % 11;
         year = self.month === 11  ? self.year + 1 : self.year;
         return ( new Date( year, month, 0 ) ).getDate();
       })();
@@ -144,14 +144,16 @@ $(function(){
       $(".calendeers").append( e.calendeer );
 
     },
-    attach: function( $el, sibling ) {
+    attach: function( $el, type ) {
       if ( ! this.el ) {
         return this;
       }
-      if ( sibling ) {
+      if ( type === "sibling" ) {
         this.el.insertAfter( $el );
-      } else {
+      } else if ( type === "prepend" ) {
         this.el.prependTo( $el );
+      } else if ( type === "append" ) {
+        this.el.appendTo( $el );
       }
       return this;
     },
