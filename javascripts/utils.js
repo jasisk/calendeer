@@ -157,11 +157,6 @@
       }
       return dateArray;
     },
-    convertToStringHashKey: function ( year, month ) {
-      var zeroPadMonth = "0" + month.toString();
-      var zeroPadMonth = zeroPadMonth.substring(zeroPadMonth.length - 2); 
-      return (year.toString() + zeroPadMonth);
-    }, 
     hashKeyByMonthDiff: function( date, monthDiff ) {
       return Utils.generateMonthHashKey(
         Utils.addMonth( date, monthDiff )
@@ -172,10 +167,10 @@
         var year  = date.getFullYear();
         var month = date.getMonth();
       } else {
-        var year = date[ "year" ];
-        var month = date[ "month" ];
+        var year = date.year;
+        var month = date.month;
       }
-      return Utils.convertToStringHashKey(year, month);
+      return (year.toString() + Utils.pad( month, 2, 0)).toString();
     },
     toUTCArray: function( date, params ) {
       var dateArray = [
