@@ -285,8 +285,6 @@ $(function(){
     },
     attachmentPoint: function( date ) {
       var attachment;
-
-
       var firstDOMMonth = this.el.children(":first");
 
       // if no DOM element exists, we can just attach as child of calendeers div
