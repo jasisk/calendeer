@@ -142,18 +142,18 @@ $(function(){
 
       this.el = e.calendeer;
       $(".calendeers").append( e.calendeer );
-
     },
     attach: function( $el, type ) {
       if ( ! this.el ) {
         return this;
       }
-      if ( type === "sibling" ) {
-        this.el.insertAfter( $el );
-      } else if ( type === "prepend" ) {
-        this.el.prependTo( $el );
-      } else if ( type === "append" ) {
-        this.el.appendTo( $el );
+      var conditions = {
+        sibling: this.el.insertAfter,
+        prepend: this.el.prependTo,
+        append: this.el.appendTo
+      };
+      if (conditions[type]) {
+        conditions[type].call( this.el, $el);
       }
       return this;
     },

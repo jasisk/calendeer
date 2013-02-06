@@ -37,7 +37,8 @@ $(function(){
       this.setTime("start", noon, false );
       this.setTime("end", noon, false );
       this.preload();
-      this.toggleFocused( "start", false );
+      this.toggleFocused( "start" );
+      this.removeInputHighlighting();
     },
     get: function( type ) {
       if ( Utils.isDate( this.dates[type] ) &&
@@ -224,7 +225,7 @@ $(function(){
 
       $input.on( "keyup.calendeer." + type, { type: type, scope: this }, this.inputHandler );
       $input.on( "focus.calendeer." + type, { type: type, scope: this }, $.proxy( function(e) {
-        this.toggleFocused(e.data.type, false );
+        this.toggleFocused( e.data.type );
         this.show( e.data.type );
       }, this ) );
     },
@@ -338,7 +339,7 @@ $(function(){
 
       return [ attachment.el, "sibling" ];
     },
-    toggleFocused: function( focused, addHighlighting ) {
+    toggleFocused: function( focused ) {
       if ( focused !== "start" && focused !== "end" ) {
         focused = this.focused === "start" ? "end" : "start";
       }
@@ -346,28 +347,12 @@ $(function(){
         $( this.options.startInput ).removeClass( "calendeer-focused-input" );
         $( this.options.endInput   ).addClass(    "calendeer-focused-input" );
 
-        if ( addHighlighting ) {
-          $( this.options.startInput ).removeClass( "calendeer-focused-input-start" );
-          $( this.options.endInput   ).addClass(    "calendeer-focused-input-end" );
-        } else {
-          $( this.options.startInput ).removeClass( "calendeer-focused-input-start" );
-          $( this.options.endInput   ).removeClass( "calendeer-focused-input-end" );
-        }
-
         this.focused = "end";
         this.el.addClass( "end-focus" );
         this.el.removeClass( "start-focus" );
       } else {
         $( this.options.startInput ).addClass(    "calendeer-focused-input" );
         $( this.options.endInput   ).removeClass( "calendeer-focused-input" );
-
-        if ( addHighlighting ) {
-          $( this.options.endInput   ).removeClass( "calendeer-focused-input-end" );
-          $( this.options.startInput ).addClass(    "calendeer-focused-input-start" );
-        } else {
-          $( this.options.endInput   ).removeClass( "calendeer-focused-input-end" );
-          $( this.options.startInput ).removeClass( "calendeer-focused-input-start" );
-        }
 
         this.focused = "start";
         this.el.addClass( "start-focus" );
@@ -392,6 +377,23 @@ $(function(){
         this.el.removeClass( "end-time-focus" );
       }
     },
+    toggleInputHighlighting: function( focused ) {
+      if ( focused !== "start" && focused !== "end" ) {
+        focused = this.focused === "start" ? "end" : "start";
+      }
+      var notFocused = focused === "start" ? "end" : "start";
+
+      $( this.options[ focused + "Input" ] ).addClass( 
+        "calendeer-focused-input-" + focused
+      );
+      $( this.options[ notFocused + "Input" ] ).removeClass(
+        "calendeer-focused-input-" + notFocused 
+      );
+    },
+    removeInputHighlighting: function() {
+      $( this.options.startInput ).removeClass( "calendeer-focused-input-start" );
+      $( this.options.endInput   ).removeClass( "calendeer-focused-input-end" );
+    }, 
     show: function( date, index ) {
       if ( typeof index !== "number" ||
            index < 0 ||
@@ -484,7 +486,8 @@ $(function(){
         this.emitEvent( "setDateTime", [type, Utils.toISO(dateTime), dateTime] );
       }
       if ( ! fromHandler ) {
-        this.toggleFocused( undefined, true );
+        this.toggleInputHighlighting();
+        this.toggleFocused();
       }
       return this;
     },
