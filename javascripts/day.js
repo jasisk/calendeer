@@ -56,9 +56,6 @@ $(function(){
         "data-date": day,
         "data": { "calendeer": this }
       } );
-      if ( self.isPast() ) {
-        self.el.addClass( confs.classes.past );
-      }
       if ( self.isToday() ) {
         self.el.addClass( confs.classes.today );
       }
@@ -70,9 +67,6 @@ $(function(){
     isToday: function() { return this.props.today; },
     _setState: function( startDate, endDate ) {
       var flag;
-      if ( this.isPast() ) {
-        return this;
-      }
 
       if ( Utils.isDate(startDate) || Utils.isDate(endDate) ) {
         flag = Utils.rangeComparator( this.dateObject, startDate, endDate );
