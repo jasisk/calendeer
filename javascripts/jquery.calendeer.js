@@ -3,13 +3,13 @@ $(function() {
   $.fn.calendeerWidget = function( options ){
     return this.each( function(){
       var opts = $.extend( {}, options );
-      init( "calendeer_start_input", "calendeer_end_input" );
+      init.apply( this, [ "calendeer_start_input", "calendeer_end_input", opts ] );
     } );
   };
 
   var init = function( startClass, endClass ){
-    var $startInput = $("." + startClass),
-    $endInput = $("." + endClass),
+    var $startInput = $(this).find("." + startClass),
+    $endInput = $(this).find("." + endClass),
     $startTimeInput,
     $endTimeInput,
     startName = $startInput.attr( "name" ),
@@ -40,7 +40,7 @@ $(function() {
     } );
 
     // update the hidden input's time representation on every setDateTime call
-    $(document).bind( "setDateTime", function( e, type, isoDate, dateObject ) {
+    $(this).bind( "setDateTime", function( e, type, isoDate, dateObject ) {
       if ( type === "start" ) {
         $startHidden.val( isoDate );
       } else if ( type === "end" ) {
@@ -52,7 +52,7 @@ $(function() {
     calendeer.clearEventQueue();
 
     // hide Calendeer unless one of the four inputs is selected
-    $(document).delegate(':input', 'focus', function() { 
+    $(this).delegate(':input', 'focus', function() { 
       var ae = document.activeElement;
       var focusedClasses = ae.className;
       var inputClasses = [ startClass + "_calendeer",
