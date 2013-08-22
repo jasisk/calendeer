@@ -28,7 +28,7 @@ $(function(){
       this.el = $( "<div></div>", {"class": "calendeers"} );
       this.show( date );
       this.setupHandlers();
-      this.handleOptions( this.options );
+      this.handleFieldOptions( this.options );
       var noon = new Date();
           noon.setHours(12);
           noon.setMinutes(0);
@@ -36,6 +36,7 @@ $(function(){
           noon.setMilliseconds(0);
       this.setTime("start", noon, false );
       this.setTime("end", noon, false );
+      this.handleDefaultDateOptions( this.options );
       this.preload();
       this.toggleFocused( "start" );
       this.removeInputHighlighting();
@@ -57,7 +58,7 @@ $(function(){
         if ( this.options.timeSupport ) { this.setTime(type, date); }
       }
     },
-    handleOptions: function( options ) {
+    handleFieldOptions: function( options ) {
       var self = this,
           actions = {
             target: this.attach,
@@ -76,6 +77,29 @@ $(function(){
               if ( options.timeSupport ) {
                 this.setupTimeInput( "end", input );
               }
+            }
+          };
+
+      $.each( options, function(k, v) {
+        if ( Object.prototype.hasOwnProperty.call(actions, k) ) {
+          actions[k].call( self, v );
+        }
+      } );
+    },
+    handleDefaultDateOptions: function( options ) {
+      var self = this,
+          actions = {
+            defaultStartTime: function( input ) {
+              this.setTime("start", input, false );
+            },
+            defaultStartDate: function( input ) {
+              this.setDate("start", input );
+            },
+            defaultEndTime: function( input ) {
+              this.setTime("end", input, false );
+            },
+            defaultEndDate: function( input ) {
+              this.setDate("end", input );
             }
           };
 
