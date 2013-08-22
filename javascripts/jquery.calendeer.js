@@ -7,7 +7,7 @@ $(function() {
     } );
   };
 
-  var init = function( startClass, endClass ){
+  var init = function( startClass, endClass, opts ){
     var $startInput = $(this).find("." + startClass),
     $endInput = $(this).find("." + endClass),
     $startTimeInput,
@@ -31,21 +31,44 @@ $(function() {
     $startInput.after( $startTimeInput ).after( $startHidden );
     $endInput.after( $endTimeInput ).after( $endHidden );
 
+    // Initialize times
+    var startDate = new Date();
+        startDate.setHours(0);
+        startDate.setMinutes(0);
+        startDate.setSeconds(0);
+        startDate.setMilliseconds(0);
+
+    var endDate = new Date();
+        endDate.setHours(23);
+        endDate.setMinutes(59);
+        endDate.setSeconds(59);
+        endDate.setMilliseconds(0);
+
     // pass inputs to Calendeer object
     var calendeer = new App.Calendeer( {
       startInput: $startInput,
       startTimeInput: $startTimeInput,
       endInput: $endInput,
-      endTimeInput: $endTimeInput
+      endTimeInput: $endTimeInput,
+      defaultStartDate: startDate,
+      defaultStartTime: startDate,
+      defaultEndTime: endDate
     } );
 
     // update the hidden input's time representation on every setDateTime call
     $(this).bind( "setDateTime", function( e, type, isoDate, dateObject ) {
-      if ( type === "start" ) {
-        $startHidden.val( isoDate );
-      } else if ( type === "end" ) {
-        $endHidden.val( isoDate );
+      if (!calendeer.options.useSugar) {
+        throw new Error("Config error. Time support requires sugar.");
+      } else if (!(Utils.isDate(dateObject) && dateObject.isValid())) {
+        throw new Error("User error. " + dateObject + " is not a valid date");
       }
+
+      if ( type === "start" ) {
+        $startHidden.val( dateObject.format("{yyyy}-{MM}-{dd}T{HH}:{mm}:{ss}") );
+      } else if ( type === "end" ) {
+        $endHidden.val( dateObject.format("{yyyy}-{MM}-{dd}T{HH}:{mm}:{ss}") );
+      }
+
     } );
 
     calendeer.el.insertAfter( $endTimeInput );
