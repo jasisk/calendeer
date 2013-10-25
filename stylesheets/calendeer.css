@@ -109,24 +109,24 @@
 }
 
 .calendeer_start_input_calendeer {
-  min-width: auto !important;
+  min-width: 0 !important;
   width: 150px !important;
   margin-right: 5px;
 }
 
 .calendeer_end_input_calendeer {
-  min-width: auto !important;
+  min-width: 0 !important;
   width: 150px !important;
   margin-right: 5px;
 }
 
 .calendeer_start_input_time_calendeer {
-  min-width: auto !important;
+  min-width: 0 !important;
   width: 150px !important;
 }
 
 .calendeer_end_input_time_calendeer {
-  min-width: auto !important;
+  min-width: 0 !important;
   width: 150px !important;
 }
 
