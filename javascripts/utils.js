@@ -8,6 +8,43 @@
       AFTER:   1 << 4
     },
     rightNow: new Date(),
+    combineDateTime: function( date, time ) {
+      // TODO: Fix. Assumes local timezone.
+      var combined;
+      date = this.toArray( date ).slice( 0, 3 );
+      time = this.toArray( time ).slice( 3, -1 );
+      combined = date.concat( time );
+      // Wish there was a better way to do this.
+      return new Date(
+        combined[0], combined[1], combined[2], combined[3],
+        combined[4], combined[5], combined[6]
+      );
+    },
+    toISO: function( date ) {
+      if ( ! this.isDate( date ) ) {
+        return;
+      }
+      if ( Date.prototype.toISOString ) {
+        return date.toISOString();
+      }
+      var pad = this.pad, components = this.toUTCArray(date);
+      return components[0] +
+             "-" + pad( components[1] + 1, 2 ) +
+             "-" + pad( components[2], 2 ) +
+             "T" + pad( components[3], 2 ) +
+             ":" + pad( components[4], 2 ) +
+             ":" + pad( components[5], 2 ) +
+             "." + pad( components[6], 3 ) +
+             "Z";
+    },
+    pad: function( val, width, character ) {
+      if ( character == undefined ) {
+        character = "0";
+      }
+      width -= (val + "").length;
+      if ( width++ < 0 ) { width = 0; }
+      return ( new Array(width) ).join( character ) + val;
+    },
     addMonth: function( date, months ) {
       var year;
       if ( months == undefined ) {
@@ -17,6 +54,7 @@
       if ( isNaN(months) ) {
         throw new UtilsError( "addMonth requires an integer" );
       }
+      // TODO: try to remove this if
       if ( ! this.isDate(date) ) {
         date = this.rightNow;
       }
@@ -40,7 +78,20 @@
     isDate: function( date ) {
       return typeof date === "object" && date instanceof Date;
     },
-    dateComparator: function( firstDate, secondDate ) {
+    validateDateIsInAcceptableRange: function( date ) {
+      minDate = new Date( 1806, 5, 30); // Andrew Jackson kills a man in a duel after the man had accused Jackson's wife of bigamy
+      maxDate = new Date( 2220, 1,  1); // Date that 'mind uploading' is perfected and used extenisvely in global rewilding efforts
+
+      compareOne = (Utils.dateComparator( date, minDate ) >= 0);
+      compareTwo = (Utils.dateComparator( date, minDate ) >= 0);
+
+      if (compareOne && compareTwo) {
+        return true;
+      } else {
+        return false;
+      }   
+    },
+    dateTimeComparator: function( firstDate, secondDate ) {
       if ( ! this.isDate(firstDate) || ! this.isDate(secondDate) ) {
         throw new DayError( "Date comparator failed -- invalid date object" );
       }
@@ -51,6 +102,14 @@
       } else {
         return 0;
       }
+    },
+    dateComparator: function( firstDate, secondDate ) {
+      if ( ! this.isDate(firstDate) || ! this.isDate(secondDate) ) {
+        throw new DayError( "Date comparator failed -- invalid date object" );
+      }
+      firstDate = this.trimDate( firstDate );
+      secondDate = this.trimDate( secondDate );
+      return this.dateTimeComparator( firstDate, secondDate );
     },
     rangeComparator: function( input, start, end ) {
       if ( ! this.isDate(input) ||
@@ -90,7 +149,39 @@
         date.getHours(),
         date.getMinutes(),
         date.getSeconds(),
-        date.getMilliseconds()
+        date.getMilliseconds(),
+        date.getTimezoneOffset()
+      ];
+      if ( params != undefined ) {
+        return dateArray.slice( 0, params );
+      }
+      return dateArray;
+    },
+    hashKeyByMonthDiff: function( date, monthDiff ) {
+      return Utils.generateMonthHashKey(
+        Utils.addMonth( date, monthDiff )
+      );
+    },
+    generateMonthHashKey: function( date ) {
+      if (Utils.isDate( date )) {
+        var year  = date.getFullYear();
+        var month = date.getMonth();
+      } else {
+        var year = date.year;
+        var month = date.month;
+      }
+      return (year.toString() + Utils.pad( month, 2, 0)).toString();
+    },
+    toUTCArray: function( date, params ) {
+      var dateArray = [
+        date.getUTCFullYear(),
+        date.getUTCMonth(),
+        date.getUTCDate(),
+        date.getUTCHours(),
+        date.getUTCMinutes(),
+        date.getUTCSeconds(),
+        date.getUTCMilliseconds(),
+        0
       ];
       if ( params != undefined ) {
         return dateArray.slice( 0, params );

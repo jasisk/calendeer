@@ -3,7 +3,9 @@
   color: #395069;
   text-align: center;
   overflow: hidden;
-  width: 820px;
+  width: 410px;
+  margin-left: 180px;
+  margin-top: 15px;
 }
 
 .calendeer {
@@ -77,21 +79,21 @@
 .calendeer-day.start-date,
 .calendeers.start-focus .calendeer-day.hovered,
 .calendeers.start-focus.end-date .after-date.hovered {
-  background-color: #e39937;
+  background-color: #3bd521;
   color: white;
 }
 
 .calendeer-day.end-date,
 .calendeers.end-focus .calendeer-day.hovered,
 .calendeers.end-focus.start-date .before-date.hovered {
-  background-color: #3bd521;
+  background-color: #e39937;
   color: white;
 }
 
 .calendeer-day.start-end-date,
 .calendeers.start-focus .calendeer-day.end-date.hovered,
 .calendeers.end-focus .calendeer-day.start-date.hovered {
-  background: url(../images/start-end-date.gif) 50% 50% no-repeat;
+  background: url(data:image/gif;base64,R0lGODdhFwAQAIQBAOKZN+OZN+CaN9edNeGaN96bNtycNtGgNb6mMsijM8WkM7OqMZ6xLqKwL6avL4+3LJC3LIG8Kni/KWzEJ1nKJVPMJF7JJlLNJEnQI0PSIkrQIz7UITvVIeOZN+OZN+OZNywAAAAAFwAQAAAFUyAnjmRpUoqpqg4grDBXHUHwxiYE1AGBk5oEr+b7cSKCIfGXQSh5ANzE8ITCNovqMKqyDLRbFWMHtpIutHJ49CCrzRjhWxmVFOZPQAPA7/v/gAQhADs=) 50% 50% no-repeat;
   color: white;
 }
 
@@ -104,4 +106,34 @@
 .calendeers.start-focus.end-date .after-date {
   background-color: #dedede;
   color: gray;
+}
+
+.calendeer_start_input_calendeer {
+  min-width: 0 !important;
+  width: 150px !important;
+  margin-right: 5px;
+}
+
+.calendeer_end_input_calendeer {
+  min-width: 0 !important;
+  width: 150px !important;
+  margin-right: 5px;
+}
+
+.calendeer_start_input_time_calendeer {
+  min-width: 0 !important;
+  width: 150px !important;
+}
+
+.calendeer_end_input_time_calendeer {
+  min-width: 0 !important;
+  width: 150px !important;
+}
+
+.calendeer-focused-input-start {
+  border: 1px solid #3bd521 !important;
+}
+
+.calendeer-focused-input-end {
+  border: 1px solid #e39937 !important;
 }
